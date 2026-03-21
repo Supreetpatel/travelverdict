@@ -22,7 +22,7 @@ export default function SiteHeader() {
   };
 
   return (
-    <header className="site-shell">
+    <header className="site-shell site-header">
       <div className="shell-topbar">
         <Link href="/" className="brand-mark">
           <span className="brand-name">StrateStats</span>

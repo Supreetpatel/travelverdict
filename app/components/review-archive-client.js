@@ -17,17 +17,28 @@ export default function ReviewArchiveClient({ reviewArchive, patternReports }) {
     ? patternReports
     : fallbackPatternReports;
 
+  const sortedArchive = useMemo(() => {
+    const toTimestamp = (value) => {
+      const parsed = Date.parse(value ?? "");
+      return Number.isNaN(parsed) ? 0 : parsed;
+    };
+
+    return [...safeArchive].sort(
+      (a, b) => toTimestamp(b.date) - toTimestamp(a.date),
+    );
+  }, [safeArchive]);
+
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) {
-      return safeArchive;
+      return sortedArchive;
     }
-    return safeArchive.filter((entry) =>
+    return sortedArchive.filter((entry) =>
       `${entry.date} ${entry.platform} ${entry.type} ${entry.title} ${entry.summary}`
         .toLowerCase()
         .includes(term),
     );
-  }, [query, safeArchive]);
+  }, [query, sortedArchive]);
 
   useEffect(() => {
     if (!selectedEntry) {
