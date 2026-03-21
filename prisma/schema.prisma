@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ReviewSource {
+  PLAY_STORE
+  REDDIT
+  X
+}
+
+enum CredibilityTier {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Platform {
+  id               String          @id @default(cuid())
+  slug             String          @unique
+  name             String          @unique
+  handle           String?
+  logoUrl          String?
+  playStoreAppId   String?
+  supportScore     Int             @default(50)
+  relatabilityScore Int            @default(50)
+  helpfulnessScore Int             @default(50)
+  compositeScore   Int             @default(50)
+  lastScoredAt     DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  reviews          Review[]
+  snapshots        ScoreSnapshot[]
+}
+
+model Review {
+  id               String          @id @default(cuid())
+  platformId       String
+  platform         Platform        @relation(fields: [platformId], references: [id], onDelete: Cascade)
+  source           ReviewSource
+  externalId       String?
+  author           String?
+  content          String
+  rating           Int?
+  url              String?
+  sentimentScore   Int             @default(0)
+  credibilityTier  CredibilityTier @default(LOW)
+  supportSignal    Int             @default(0)
+  relatabilitySignal Int           @default(0)
+  helpfulnessSignal Int            @default(0)
+  raw              Json?
+  createdAt        DateTime?
+  scrapedAt        DateTime        @default(now())
+
+  @@index([platformId, source])
+  @@index([createdAt])
+  @@unique([source, externalId])
+}
+
+model ScoreSnapshot {
+  id               String          @id @default(cuid())
+  platformId       String
+  platform         Platform        @relation(fields: [platformId], references: [id], onDelete: Cascade)
+  supportScore     Int
+  relatabilityScore Int
+  helpfulnessScore Int
+  compositeScore   Int
+  generatedAt      DateTime        @default(now())
+  windowHours      Int             @default(168)
+
+  @@index([platformId, generatedAt])
+}

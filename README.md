@@ -1,5 +1,27 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+## Automatic Real Data Refresh
+
+This project includes automatic refresh via Vercel Cron configured in [vercel.json](vercel.json). It calls [/api/cron/scrape](app/api/cron/scrape/route.js) every 6 hours.
+
+Set the following environment variables in your deployment:
+
+- `DATABASE_URL`
+- `CRON_SECRET` (recommended)
+- `TWITTER_BEARER_TOKEN`
+- `REDDIT_USER_AGENT`
+- `REDDIT_CLIENT_ID`
+- `REDDIT_CLIENT_SECRET`
+- `REDDIT_REFRESH_TOKEN`
+- `SCRAPE_REVIEW_LIMIT` (optional)
+- `SCORING_WINDOW_HOURS` (optional)
+
+Manual local refresh still works with:
+
+```bash
+npm run scrape:all
+```
+
 ## Getting Started
 
 First, run the development server:
