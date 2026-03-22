@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { runInstagramIngestion } from "../lib/ingestion/instagram.js";
-import { prisma } from "./shared.js";
+import { disconnectDb } from "./shared.js";
 
 async function run() {
   await runInstagramIngestion();
@@ -12,5 +12,5 @@ run()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await disconnectDb();
   });

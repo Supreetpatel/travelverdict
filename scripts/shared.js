@@ -1,61 +1,38 @@
 import "dotenv/config";
 import crypto from "node:crypto";
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
+import { db } from "../lib/neon-db.js";
 import { aggregatePlatformScores, scoreSignal } from "../lib/scoring.js";
 
-const { Pool } = pg;
-
-function isLocalDatabaseUrl(url) {
-  if (!url) {
-    return false;
-  }
-
-  return /localhost|127\.0\.0\.1/i.test(url);
+export async function getAllPlatforms() {
+  return db`
+    SELECT
+      "id",
+      "slug",
+      "name",
+      "handle",
+      "playStoreAppId"
+    FROM "Platform"
+    ORDER BY "name" ASC
+  `;
 }
 
-function resolveDatabaseUrl() {
-  const candidates = [
-    process.env.POSTGRES_PRISMA_URL,
-    process.env.POSTGRES_URL_NON_POOLING,
-    process.env.POSTGRES_URL,
-    process.env.DATABASE_URL,
-  ].filter(Boolean);
-
-  if (!candidates.length) {
-    return null;
-  }
-
-  if (process.env.VERCEL) {
-    const nonLocal = candidates.find((value) => !isLocalDatabaseUrl(value));
-    if (nonLocal) {
-      return nonLocal;
-    }
-
-    throw new Error(
-      "Vercel cron cannot use localhost DATABASE_URL. Set POSTGRES_PRISMA_URL or a remote DATABASE_URL.",
-    );
-  }
-
-  return process.env.DATABASE_URL ?? candidates[0];
+export async function getPlatformsWithPlayStoreAppId() {
+  return db`
+    SELECT
+      "id",
+      "slug",
+      "name",
+      "handle",
+      "playStoreAppId"
+    FROM "Platform"
+    WHERE "playStoreAppId" IS NOT NULL
+    ORDER BY "name" ASC
+  `;
 }
 
-const databaseUrl = resolveDatabaseUrl();
-
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required for worker scripts.");
+export async function disconnectDb() {
+  // Neon serverless client is stateless and does not need explicit disconnect.
 }
-
-const pool = new Pool({
-  connectionString: databaseUrl,
-  ssl: isLocalDatabaseUrl(databaseUrl)
-    ? undefined
-    : { rejectUnauthorized: false },
-});
-const adapter = new PrismaPg(pool);
-
-export const prisma = new PrismaClient({ adapter });
 
 export function resolveReviewLimit() {
   const parsed = Number(process.env.SCRAPE_REVIEW_LIMIT ?? 100);
@@ -91,65 +68,76 @@ export async function upsertReview({
   raw,
 }) {
   const scored = scoreSignal(content, source, rating ?? null);
+  const rawJson = raw ? JSON.stringify(raw) : null;
 
-  await prisma.review.upsert({
-    where: {
-      source_externalId: {
-        source,
-        externalId,
-      },
-    },
-    update: {
-      author,
-      content,
-      rating: rating ?? null,
-      url: url ?? null,
-      sentimentScore: scored.sentimentScore,
-      credibilityTier: scored.credibilityTier,
-      supportSignal: scored.supportSignal,
-      relatabilitySignal: scored.relatabilitySignal,
-      helpfulnessSignal: scored.helpfulnessSignal,
-      createdAt: createdAt ?? null,
-      raw,
-      scrapedAt: new Date(),
-    },
-    create: {
-      platformId,
-      source,
-      externalId,
-      author: author ?? null,
-      content,
-      rating: rating ?? null,
-      url: url ?? null,
-      sentimentScore: scored.sentimentScore,
-      credibilityTier: scored.credibilityTier,
-      supportSignal: scored.supportSignal,
-      relatabilitySignal: scored.relatabilitySignal,
-      helpfulnessSignal: scored.helpfulnessSignal,
-      createdAt: createdAt ?? null,
-      raw,
-    },
-  });
+  await db`
+    INSERT INTO "Review" (
+      "id",
+      "platformId",
+      "source",
+      "externalId",
+      "author",
+      "content",
+      "rating",
+      "url",
+      "sentimentScore",
+      "credibilityTier",
+      "supportSignal",
+      "relatabilitySignal",
+      "helpfulnessSignal",
+      "createdAt",
+      "raw",
+      "scrapedAt"
+    )
+    VALUES (
+      ${crypto.randomUUID()},
+      ${platformId},
+      CAST(${source} AS "ReviewSource"),
+      ${externalId},
+      ${author ?? null},
+      ${content},
+      ${rating ?? null},
+      ${url ?? null},
+      ${scored.sentimentScore},
+      CAST(${scored.credibilityTier} AS "CredibilityTier"),
+      ${scored.supportSignal},
+      ${scored.relatabilitySignal},
+      ${scored.helpfulnessSignal},
+      ${createdAt ?? null},
+      CAST(${rawJson} AS jsonb),
+      NOW()
+    )
+    ON CONFLICT ("source", "externalId")
+    DO UPDATE SET
+      "author" = EXCLUDED."author",
+      "content" = EXCLUDED."content",
+      "rating" = EXCLUDED."rating",
+      "url" = EXCLUDED."url",
+      "sentimentScore" = EXCLUDED."sentimentScore",
+      "credibilityTier" = EXCLUDED."credibilityTier",
+      "supportSignal" = EXCLUDED."supportSignal",
+      "relatabilitySignal" = EXCLUDED."relatabilitySignal",
+      "helpfulnessSignal" = EXCLUDED."helpfulnessSignal",
+      "createdAt" = EXCLUDED."createdAt",
+      "raw" = EXCLUDED."raw",
+      "scrapedAt" = NOW()
+  `;
 }
 
 export async function refreshPlatformScores(platformId) {
   const windowHours = Number(process.env.SCORING_WINDOW_HOURS ?? 168);
   const since = new Date(Date.now() - windowHours * 60 * 60 * 1000);
 
-  const reviews = await prisma.review.findMany({
-    where: {
-      platformId,
-      scrapedAt: {
-        gte: since,
-      },
-    },
-    select: {
-      supportSignal: true,
-      relatabilitySignal: true,
-      helpfulnessSignal: true,
-      credibilityTier: true,
-    },
-  });
+  const reviews = await db`
+    SELECT
+      "supportSignal",
+      "relatabilitySignal",
+      "helpfulnessSignal",
+      "credibilityTier"
+    FROM "Review"
+    WHERE "platformId" = ${platformId}
+      AND "scrapedAt" >= ${since}
+  `;
 
   const entries = reviews.map((review) => {
     const credibilityWeight =
@@ -171,27 +159,37 @@ export async function refreshPlatformScores(platformId) {
 
   const scores = aggregatePlatformScores(entries);
 
-  await prisma.platform.update({
-    where: { id: platformId },
-    data: {
-      supportScore: scores.supportScore,
-      relatabilityScore: scores.relatabilityScore,
-      helpfulnessScore: scores.helpfulnessScore,
-      compositeScore: scores.compositeScore,
-      lastScoredAt: new Date(),
-    },
-  });
+  await db`
+    UPDATE "Platform"
+    SET
+      "supportScore" = ${scores.supportScore},
+      "relatabilityScore" = ${scores.relatabilityScore},
+      "helpfulnessScore" = ${scores.helpfulnessScore},
+      "compositeScore" = ${scores.compositeScore},
+      "lastScoredAt" = NOW()
+    WHERE "id" = ${platformId}
+  `;
 
-  await prisma.scoreSnapshot.create({
-    data: {
-      platformId,
-      supportScore: scores.supportScore,
-      relatabilityScore: scores.relatabilityScore,
-      helpfulnessScore: scores.helpfulnessScore,
-      compositeScore: scores.compositeScore,
-      windowHours,
-    },
-  });
+  await db`
+    INSERT INTO "ScoreSnapshot" (
+      "id",
+      "platformId",
+      "supportScore",
+      "relatabilityScore",
+      "helpfulnessScore",
+      "compositeScore",
+      "windowHours"
+    )
+    VALUES (
+      ${crypto.randomUUID()},
+      ${platformId},
+      ${scores.supportScore},
+      ${scores.relatabilityScore},
+      ${scores.helpfulnessScore},
+      ${scores.compositeScore},
+      ${windowHours}
+    )
+  `;
 
   return scores;
 }

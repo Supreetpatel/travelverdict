@@ -5,6 +5,7 @@ import {
   BadgeCheck,
   MessageSquareWarning,
   Share2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -28,6 +29,7 @@ export default function Home() {
   const [isLoadingRanking, setIsLoadingRanking] = useState(false);
   const [apiReviewOfDay, setApiReviewOfDay] = useState(null);
   const [apiTrendingSignals, setApiTrendingSignals] = useState([]);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   const leaderboardCategories = [
     { id: "playstore", label: "Play Store Reviews" },
@@ -108,6 +110,22 @@ export default function Home() {
       isCancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    function handleEscape(event) {
+      if (event.key === "Escape") {
+        setIsReviewModalOpen(false);
+      }
+    }
+
+    if (isReviewModalOpen) {
+      window.addEventListener("keydown", handleEscape);
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isReviewModalOpen]);
 
   const ranking = apiRanking;
   const liveReviewOfTheDay = apiReviewOfDay;
@@ -237,9 +255,13 @@ export default function Home() {
               </p>
               <p className="review-impact">{liveReviewOfTheDay.impact}</p>
               <div className="hero-actions">
-                <Link href="/review-archive" className="cta-button">
-                  Read Full Story <ArrowRight size={16} />
-                </Link>
+                <button
+                  type="button"
+                  className="cta-button"
+                  onClick={() => setIsReviewModalOpen(true)}
+                >
+                  Read More <ArrowRight size={16} />
+                </button>
                 <button
                   type="button"
                   className="ghost-button"
@@ -313,6 +335,49 @@ export default function Home() {
           </Link>
         </article>
       </section>
+
+      {isReviewModalOpen && liveReviewOfTheDay ? (
+        <div
+          className="archive-modal-backdrop"
+          onClick={() => setIsReviewModalOpen(false)}
+          role="presentation"
+        >
+          <article
+            className="archive-modal-card"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="review-modal-title"
+          >
+            <header className="archive-modal-head">
+              <div>
+                <p className="card-tag">Review of the Day</p>
+                <h2 id="review-modal-title">{liveReviewOfTheDay.title}</h2>
+                <p className="score-label">
+                  {liveReviewOfTheDay.platform} | {liveReviewOfTheDay.date}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => setIsReviewModalOpen(false)}
+                aria-label="Close review modal"
+              >
+                <X size={16} /> Close
+              </button>
+            </header>
+
+            <p className="review-modal-story">{liveReviewOfTheDay.story}</p>
+            <p className="review-impact">{liveReviewOfTheDay.impact}</p>
+
+            <div className="hero-actions">
+              <Link href="/review-archive" className="text-link">
+                Open full archive <ArrowRight size={16} />
+              </Link>
+            </div>
+          </article>
+        </div>
+      ) : null}
     </main>
   );
 }

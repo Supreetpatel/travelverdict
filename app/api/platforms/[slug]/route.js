@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/neon-db";
 
 export const runtime = "nodejs";
 
@@ -7,23 +7,21 @@ export async function GET(_request, { params }) {
   const { slug } = await params;
 
   try {
-    const platform = await prisma.platform.findUnique({
-      where: { slug },
-      include: {
-        reviews: {
-          orderBy: {
-            scrapedAt: "desc",
-          },
-          take: 100,
-        },
-        snapshots: {
-          orderBy: {
-            generatedAt: "desc",
-          },
-          take: 12,
-        },
-      },
-    });
+    const [platform] = await db`
+      SELECT
+        "id",
+        "slug",
+        "name",
+        "logoUrl",
+        "handle",
+        "supportScore",
+        "relatabilityScore",
+        "helpfulnessScore",
+        "compositeScore"
+      FROM "Platform"
+      WHERE "slug" = ${slug}
+      LIMIT 1
+    `;
 
     if (!platform) {
       return NextResponse.json(
@@ -31,6 +29,34 @@ export async function GET(_request, { params }) {
         { status: 404 },
       );
     }
+
+    const snapshots = await db`
+      SELECT
+        "supportScore",
+        "relatabilityScore",
+        "helpfulnessScore",
+        "compositeScore",
+        "generatedAt"
+      FROM "ScoreSnapshot"
+      WHERE "platformId" = ${platform.id}
+      ORDER BY "generatedAt" DESC
+      LIMIT 12
+    `;
+
+    const reviews = await db`
+      SELECT
+        "source",
+        "content",
+        "rating",
+        "url",
+        "createdAt",
+        "scrapedAt",
+        "credibilityTier"
+      FROM "Review"
+      WHERE "platformId" = ${platform.id}
+      ORDER BY "scrapedAt" DESC
+      LIMIT 100
+    `;
 
     return NextResponse.json({
       id: platform.id,
@@ -44,14 +70,14 @@ export async function GET(_request, { params }) {
         helpfulness: platform.helpfulnessScore,
         composite: platform.compositeScore,
       },
-      snapshots: platform.snapshots.map((snapshot) => ({
+      snapshots: snapshots.map((snapshot) => ({
         supportScore: snapshot.supportScore,
         relatabilityScore: snapshot.relatabilityScore,
         helpfulnessScore: snapshot.helpfulnessScore,
         compositeScore: snapshot.compositeScore,
         generatedAt: snapshot.generatedAt,
       })),
-      reviews: platform.reviews.map((review) => ({
+      reviews: reviews.map((review) => ({
         source: review.source,
         content: review.content,
         rating: review.rating,

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { runRedditIngestion } from "../lib/ingestion/reddit.js";
-import { prisma } from "./shared.js";
+import { disconnectDb } from "./shared.js";
 
 async function run() {
   await runRedditIngestion();
@@ -12,5 +12,5 @@ run()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await disconnectDb();
   });

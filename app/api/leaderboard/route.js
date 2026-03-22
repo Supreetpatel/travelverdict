@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/neon-db";
 import { aggregatePlatformScores, scoreSignal } from "@/lib/scoring";
 
 export const runtime = "nodejs";
@@ -13,16 +13,12 @@ const categoryColumn = {
 
 // Calculate scores for a specific source
 async function calculateSourceScores(platformId, source) {
-  const reviews = await prisma.review.findMany({
-    where: {
-      platformId,
-      source,
-    },
-    select: {
-      content: true,
-      rating: true,
-    },
-  });
+  const reviews = await db`
+    SELECT "content", "rating"
+    FROM "Review"
+    WHERE "platformId" = ${platformId}
+      AND "source" = CAST(${source} AS "ReviewSource")
+  `;
 
   if (reviews.length === 0) {
     return {
@@ -64,23 +60,18 @@ export async function GET(request) {
       };
       const source = sourceMap[category];
 
-      platforms = await prisma.platform.findMany({
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          logoUrl: true,
-          reviews: {
-            where: {
-              source,
-            },
-            select: {
-              content: true,
-              rating: true,
-            },
-          },
-        },
-      });
+      platforms = await db`
+        SELECT
+          "id",
+          "slug",
+          "name",
+          "logoUrl",
+          "supportScore",
+          "relatabilityScore",
+          "helpfulnessScore",
+          "compositeScore"
+        FROM "Platform"
+      `;
 
       // Calculate scores for this source and sort
       const withScores = await Promise.all(
@@ -100,22 +91,20 @@ export async function GET(request) {
 
       // If no Reddit/Instagram reviews exist yet, keep leaderboard populated with top platforms.
       if (rankedBySource.length === 0 && category !== "playstore") {
-        const fallbackPlatforms = await prisma.platform.findMany({
-          orderBy: {
-            compositeScore: "desc",
-          },
-          take: 5,
-          select: {
-            id: true,
-            slug: true,
-            name: true,
-            logoUrl: true,
-            supportScore: true,
-            relatabilityScore: true,
-            helpfulnessScore: true,
-            compositeScore: true,
-          },
-        });
+        const fallbackPlatforms = await db`
+          SELECT
+            "id",
+            "slug",
+            "name",
+            "logoUrl",
+            "supportScore",
+            "relatabilityScore",
+            "helpfulnessScore",
+            "compositeScore"
+          FROM "Platform"
+          ORDER BY "compositeScore" DESC
+          LIMIT 5
+        `;
 
         platforms = fallbackPlatforms.map((p) => ({
           ...p,
@@ -132,58 +121,52 @@ export async function GET(request) {
       }
     } else {
       // For calculated categories, use the stored scores
-      platforms = await prisma.platform.findMany({
-        orderBy: {
-          [column]: "desc",
-        },
-        take: 5,
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          logoUrl: true,
-          supportScore: true,
-          relatabilityScore: true,
-          helpfulnessScore: true,
-          compositeScore: true,
-        },
-      });
+      platforms = await db`
+        SELECT
+          "id",
+          "slug",
+          "name",
+          "logoUrl",
+          "supportScore",
+          "relatabilityScore",
+          "helpfulnessScore",
+          "compositeScore"
+        FROM "Platform"
+        ORDER BY
+          CASE WHEN ${column} = 'supportScore' THEN "supportScore" END DESC,
+          CASE WHEN ${column} = 'relatabilityScore' THEN "relatabilityScore" END DESC,
+          CASE WHEN ${column} = 'helpfulnessScore' THEN "helpfulnessScore" END DESC,
+          CASE WHEN ${column} = 'compositeScore' THEN "compositeScore" END DESC
+        LIMIT 5
+      `;
     }
 
     const rawData = await Promise.all(
       platforms.map(async (platform) => {
         // Get review counts and scores from all sources
-        const playStoreReviews = await prisma.review.findMany({
-          where: {
-            platformId: platform.id,
-            source: "PLAY_STORE",
-            rating: { not: null },
-          },
-          select: { rating: true },
-        });
-
-        const redditReviews = await prisma.review.findMany({
-          where: {
-            platformId: platform.id,
-            source: "REDDIT",
-          },
-          select: { rating: true },
-        });
-
-        const instagramReviews = await prisma.review.findMany({
-          where: {
-            platformId: platform.id,
-            source: "INSTAGRAM",
-          },
-          select: { rating: true },
-        });
+        const [reviewStats] = await db`
+          SELECT
+            COUNT(*) FILTER (
+              WHERE "source" = 'PLAY_STORE'::"ReviewSource"
+                AND "rating" IS NOT NULL
+            )::int AS "playStoreReviewCount",
+            AVG("rating") FILTER (
+              WHERE "source" = 'PLAY_STORE'::"ReviewSource"
+                AND "rating" IS NOT NULL
+            ) AS "playStoreAvgRating",
+            COUNT(*) FILTER (
+              WHERE "source" = 'REDDIT'::"ReviewSource"
+            )::int AS "redditReviewCount",
+            COUNT(*) FILTER (
+              WHERE "source" = 'INSTAGRAM'::"ReviewSource"
+            )::int AS "instagramReviewCount"
+          FROM "Review"
+          WHERE "platformId" = ${platform.id}
+        `;
 
         const playStoreRating =
-          playStoreReviews.length > 0
-            ? (
-                playStoreReviews.reduce((sum, r) => sum + r.rating, 0) /
-                playStoreReviews.length
-              ).toFixed(2)
+          Number(reviewStats.playStoreReviewCount) > 0
+            ? Number(reviewStats.playStoreAvgRating).toFixed(2)
             : null;
 
         let score;
@@ -191,14 +174,14 @@ export async function GET(request) {
 
         if (category === "playstore") {
           score = parseFloat(playStoreRating || 0);
-          coverage = `${playStoreReviews.length} reviews from Google Play Store`;
+          coverage = `${reviewStats.playStoreReviewCount} reviews from Google Play Store`;
         } else if (category === "reddit") {
           // If sourceScores exist (from source-based fetch), use it; otherwise calculate
           const sourceScore =
             platform.sourceScores?.compositeScore ||
             (await calculateSourceScores(platform.id, "REDDIT")).compositeScore;
           score = sourceScore;
-          coverage = `${redditReviews.length} reviews from Reddit`;
+          coverage = `${reviewStats.redditReviewCount} reviews from Reddit`;
         } else if (category === "instagram") {
           // If sourceScores exist (from source-based fetch), use it; otherwise calculate
           const sourceScore =
@@ -206,7 +189,7 @@ export async function GET(request) {
             (await calculateSourceScores(platform.id, "INSTAGRAM"))
               .compositeScore;
           score = sourceScore;
-          coverage = `${instagramReviews.length} reviews from Instagram`;
+          coverage = `${reviewStats.instagramReviewCount} reviews from Instagram`;
         } else {
           score =
             category === "support"
@@ -226,9 +209,9 @@ export async function GET(request) {
           score,
           support: `${platform.supportScore || 50} score`,
           playStoreRating: playStoreRating ? parseFloat(playStoreRating) : null,
-          playStoreReviewCount: playStoreReviews.length,
-          redditReviewCount: redditReviews.length,
-          instagramReviewCount: instagramReviews.length,
+          playStoreReviewCount: reviewStats.playStoreReviewCount,
+          redditReviewCount: reviewStats.redditReviewCount,
+          instagramReviewCount: reviewStats.instagramReviewCount,
           coverage,
         };
       }),
