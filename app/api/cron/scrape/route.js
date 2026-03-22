@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { runAllIngestion } from "@/lib/ingestion/run-all";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +21,7 @@ export async function GET(request) {
     );
   }
 
+  const { runAllIngestion } = await import("@/lib/ingestion/run-all");
   const summary = await runAllIngestion();
   const status = summary.ok ? 200 : 500;
 
