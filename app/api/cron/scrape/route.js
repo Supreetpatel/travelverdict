@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { runAllIngestion } from "@/lib/ingestion/run-all";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function isAuthorized(request) {
   const secret = process.env.CRON_SECRET;
