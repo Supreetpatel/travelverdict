@@ -3,7 +3,8 @@ import { getRankedCategory } from "@/lib/db-ui";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  description: "Booking friction, transparency, and mobile experience audits.",
+  description:
+    "Happiness trends from sentiment, social signals, and user delight.",
 };
 
 export default async function HelpfulnessDeepDivePage() {
@@ -28,10 +29,10 @@ export default async function HelpfulnessDeepDivePage() {
     <main className="site-shell page-block">
       <section className="page-intro">
         <p className="eyebrow">Category Deep-Dive</p>
-        <h1>Helpfulness Deep-Dive</h1>
+        <h1>Happiness Deep-Dive</h1>
         <p>
-          How easy booking feels in practice: pricing honesty, friction points,
-          and mobile checkout confidence.
+          How happy users feel in practice: positive sentiment, delight cues,
+          and confidence in the overall booking experience.
         </p>
       </section>
 
@@ -46,13 +47,13 @@ export default async function HelpfulnessDeepDivePage() {
       </section>
 
       <section className="premium-card">
-        <h2>Live Helpfulness Rankings</h2>
+        <h2>Live Happiness Rankings</h2>
         <div className="leaderboard-list">
           {ranking.map((item, index) => (
             <article key={item.name} className="leader-row">
               <div className="leader-rank">#{index + 1}</div>
               <h3>{item.name}</h3>
-              <p className="score-label">Database-ranked booking usability</p>
+              <p className="score-label">Database-ranked user happiness</p>
               <div className="leader-score">{item.score}</div>
             </article>
           ))}

@@ -1,8 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  description:
-    "Explore Support, Relatability, and Helpfulness deep-dive pages.",
+  description: "Explore Support, Reliability, and Happiness deep-dive pages.",
 };
 
 const categoryCards = [
@@ -14,15 +13,33 @@ const categoryCards = [
   },
   {
     href: "/categories/relatability",
-    title: "Relatability",
+    title: "Reliability",
     detail:
-      "Built for Bharat rankings focused on language support and local travel context.",
+      "Platform reliability rankings focused on booking consistency and technical stability.",
   },
   {
     href: "/categories/helpfulness",
-    title: "Helpfulness",
+    title: "Happiness",
     detail:
-      "Booking friction audits, pricing clarity, and mobile experience performance.",
+      "Customer happiness trends from social tags, positive reactions, and sentiment.",
+  },
+];
+
+const sourceRules = [
+  {
+    metric: "Reliability",
+    source: "Play Store",
+    note: "Users report technical bugs, booking failures, and app crashes here first.",
+  },
+  {
+    metric: "Happiness",
+    source: "Instagram",
+    note: "Users tag brands in photos and Reels. High Happiness means high tags and positive emojis.",
+  },
+  {
+    metric: "Support",
+    source: "Reddit",
+    note: "This is where users go for long-form horror stories about refunds and customer service.",
   },
 ];
 
@@ -33,7 +50,7 @@ export default function CategoriesIndexPage() {
         <p className="eyebrow">Category Deep-Dives</p>
         <h1>Choose what you want to evaluate.</h1>
         <p>
-          Open a focused view for Support, Relatability, or Helpfulness to
+          Open a focused view for Support, Reliability, or Happiness to
           understand why platform scores move.
         </p>
       </section>
@@ -48,6 +65,20 @@ export default function CategoriesIndexPage() {
             </Link>
           </article>
         ))}
+      </section>
+
+      <section className="premium-card">
+        <p className="eyebrow">Signal Sources</p>
+        <h2>Metric to source mapping</h2>
+        <div className="leaderboard-list">
+          {sourceRules.map((rule) => (
+            <article key={rule.metric} className="leader-row">
+              <h3>{rule.metric}</h3>
+              <p className="score-label">Source: {rule.source}</p>
+              <p>{rule.note}</p>
+            </article>
+          ))}
+        </div>
       </section>
     </main>
   );

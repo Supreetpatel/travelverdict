@@ -127,7 +127,7 @@ export default function CompareTool({ platforms }) {
             <h2>{platform.name}</h2>
             <ul className="compare-bars">
               <li>
-                <span>Helpfulness</span>
+                <span>Happiness</span>
                 <div className="bar-track">
                   <div
                     className="bar-fill"
@@ -147,7 +147,7 @@ export default function CompareTool({ platforms }) {
                 <strong>{platform.scores.support}</strong>
               </li>
               <li>
-                <span>Relatability</span>
+                <span>Reliability</span>
                 <div className="bar-track">
                   <div
                     className="bar-fill"

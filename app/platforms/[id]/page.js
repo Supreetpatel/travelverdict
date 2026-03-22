@@ -86,13 +86,13 @@ export default async function PlatformProfilePage({ params }) {
   const scoreCards = [
     {
       key: "helpfulness",
-      label: "Helpfulness",
+      label: "Happiness",
       score: platform.scores.helpfulness,
     },
     { key: "support", label: "Support", score: platform.scores.support },
     {
       key: "relatability",
-      label: "Relatability",
+      label: "Reliability",
       score: platform.scores.relatability,
     },
   ];

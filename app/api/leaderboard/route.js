@@ -234,9 +234,35 @@ export async function GET(request) {
       }),
     );
 
+    const reviewCountByCategory = (item) => {
+      if (category === "playstore") {
+        return item.playStoreReviewCount ?? 0;
+      }
+      if (category === "reddit") {
+        return item.redditReviewCount ?? 0;
+      }
+      if (category === "instagram") {
+        return item.instagramReviewCount ?? 0;
+      }
+      return 0;
+    };
+
     // Always rank by the score shown in the selected category (highest first).
+    // Tie-breakers: more source reviews first, then alphabetical by platform name.
     const data = rawData
-      .sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0))
+      .sort((a, b) => {
+        const scoreDiff = (Number(b.score) || 0) - (Number(a.score) || 0);
+        if (scoreDiff !== 0) {
+          return scoreDiff;
+        }
+
+        const countDiff = reviewCountByCategory(b) - reviewCountByCategory(a);
+        if (countDiff !== 0) {
+          return countDiff;
+        }
+
+        return a.name.localeCompare(b.name);
+      })
       .map((item, index) => ({
         ...item,
         rank: index + 1,

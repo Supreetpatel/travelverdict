@@ -3,7 +3,8 @@ import { getRankedCategory } from "@/lib/db-ui";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  description: "Language support and Built for Bharat rankings.",
+  description:
+    "Reliability ranking based on consistency and platform stability.",
 };
 
 export default async function RelatabilityDeepDivePage() {
@@ -13,22 +14,22 @@ export default async function RelatabilityDeepDivePage() {
     <main className="site-shell page-block">
       <section className="page-intro">
         <p className="eyebrow">Category Deep-Dive</p>
-        <h1>Relatability Deep-Dive</h1>
+        <h1>Reliability Deep-Dive</h1>
         <p>
-          Built for Bharat ranking based on current relatability scores stored
-          in the database.
+          Reliability ranking based on current consistency and stability signals
+          stored in the database.
         </p>
       </section>
 
       <section className="premium-card">
-        <h2>Built for Bharat Rankings</h2>
+        <h2>Live Reliability Rankings</h2>
         <div className="leaderboard-list">
           {ranking.map((item, index) => (
             <article key={item.name} className="leader-row">
               <div className="leader-rank">#{index + 1}</div>
               <h3>{item.name}</h3>
               <p className="score-label">
-                Language support and cultural fit index
+                Database-ranked reliability performance
               </p>
               <div className="leader-score">{item.score}</div>
             </article>

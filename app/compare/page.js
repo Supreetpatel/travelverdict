@@ -16,8 +16,8 @@ export default async function ComparePage() {
         <p className="eyebrow">Head-to-Head</p>
         <h1>Compare two platforms before you book.</h1>
         <p>
-          Switch use cases and instantly see who wins on Helpfulness, Support,
-          and Relatability.
+          Switch use cases and instantly see who wins on Happiness, Support, and
+          Reliability.
         </p>
       </section>
       <CompareTool platforms={platforms} />
