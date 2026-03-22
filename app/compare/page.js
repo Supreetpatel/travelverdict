@@ -1,6 +1,8 @@
 import CompareTool from "../components/compare-tool";
 import { getComparePlatforms } from "@/lib/db-ui";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   description: "Head-to-head travel platform comparison by use case.",
 };

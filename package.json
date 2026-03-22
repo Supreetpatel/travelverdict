@@ -12,8 +12,8 @@
     "prisma:push": "prisma db push",
     "seed": "prisma db seed",
     "scrape:playstore": "node scripts/playstore-scraper.js",
-    "scrape:twitter": "node scripts/twitter-listener.js",
-    "scrape:reddit": "node scripts/reddit-ingestor.js",
+    "scrape:instagram": "node scripts/instagram-scraper.js",
+    "scrape:reddit-rss": "node scripts/reddit-ingestor.js",
     "scrape:all": "node scripts/run-all.js"
   },
   "prisma": {
@@ -22,6 +22,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
+    "cheerio": "^1.1.2",
     "dotenv": "^17.3.1",
     "framer-motion": "^12.38.0",
     "google-play-scraper": "^10.1.2",
@@ -30,9 +31,7 @@
     "pg": "^8.20.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-hot-toast": "^2.6.0",
-    "snoowrap": "^1.23.0",
-    "twitter-api-v2": "^1.29.0"
+    "react-hot-toast": "^2.6.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

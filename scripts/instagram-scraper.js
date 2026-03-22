@@ -1,14 +1,14 @@
 import "dotenv/config";
-import { runTwitterIngestion } from "../lib/ingestion/twitter.js";
+import { runInstagramIngestion } from "../lib/ingestion/instagram.js";
 import { prisma } from "./shared.js";
 
 async function run() {
-  await runTwitterIngestion();
+  await runInstagramIngestion();
 }
 
 run()
   .catch((error) => {
-    console.error("X listener failed", error);
+    console.error("Instagram scraper failed", error);
     process.exit(1);
   })
   .finally(async () => {

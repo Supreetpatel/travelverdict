@@ -1,5 +1,7 @@
 import { getWeeklyRoundupData } from "@/lib/db-ui";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   description:
     "Weekly score movements and stat of the week in newsletter format.",

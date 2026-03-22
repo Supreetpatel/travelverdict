@@ -1,4 +1,4 @@
-export type SourceKind = "PLAY_STORE" | "REDDIT" | "X";
+export type SourceKind = "PLAY_STORE" | "REDDIT" | "INSTAGRAM";
 
 export type ScoredSignal = {
   credibilityTier: "LOW" | "MEDIUM" | "HIGH";
@@ -83,7 +83,7 @@ export function inferCredibilityTier(
     return { tier: "HIGH", weight: 1.35 };
   }
 
-  if (source === "X" && wordCount >= 40) {
+  if (source === "INSTAGRAM" && wordCount >= 40) {
     return { tier: "MEDIUM", weight: 1.05 };
   }
 

@@ -9,25 +9,20 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import {
-  leaderboardCategories,
-  rankedBy,
-  reviewOfTheDay,
-  trendingSignals,
-} from "./data";
 import { useEffect, useMemo, useState } from "react";
 
 export default function Home() {
-  const [activeCategory, setActiveCategory] = useState("composite");
+  const [activeCategory, setActiveCategory] = useState("playstore");
   const [apiRanking, setApiRanking] = useState([]);
   const [isLoadingRanking, setIsLoadingRanking] = useState(false);
   const [apiReviewOfDay, setApiReviewOfDay] = useState(null);
   const [apiTrendingSignals, setApiTrendingSignals] = useState([]);
 
-  const fallbackRanking = useMemo(
-    () => rankedBy(activeCategory),
-    [activeCategory],
-  );
+  const leaderboardCategories = [
+    { id: "playstore", label: "Play Store Reviews" },
+    { id: "reddit", label: "Reddit Reviews" },
+    { id: "instagram", label: "Instagram" },
+  ];
 
   useEffect(() => {
     let isCancelled = false;
@@ -103,11 +98,9 @@ export default function Home() {
     };
   }, []);
 
-  const ranking = apiRanking.length ? apiRanking : fallbackRanking;
-  const liveReviewOfTheDay = apiReviewOfDay ?? reviewOfTheDay;
-  const liveTrendingSignals = apiTrendingSignals.length
-    ? apiTrendingSignals
-    : trendingSignals;
+  const ranking = apiRanking;
+  const liveReviewOfTheDay = apiReviewOfDay;
+  const liveTrendingSignals = apiTrendingSignals;
 
   const handleShareCard = async () => {
     const topLines = ranking
@@ -174,8 +167,13 @@ export default function Home() {
           </div>
 
           <div className="leaderboard-list">
-            {isLoadingRanking ? (
+            {isLoadingRanking && !ranking.length ? (
               <p className="score-label">Refreshing live leaderboard...</p>
+            ) : null}
+            {ranking.length === 0 && !isLoadingRanking ? (
+              <p className="score-label">
+                No platform data available yet. Run scrape to populate.
+              </p>
             ) : null}
             {ranking.map((platform) => (
               <article key={platform.id} className="leader-row">
@@ -183,10 +181,24 @@ export default function Home() {
                 <div>
                   <h2>{platform.name}</h2>
                   <p className="score-label">
-                    Support {platform.support} | {platform.coverage}
+                    {activeCategory === "playstore"
+                      ? `${platform.playStoreReviewCount} reviews | ${platform.coverage}`
+                      : activeCategory === "reddit"
+                        ? `${platform.redditReviewCount} reviews | ${platform.coverage}`
+                        : activeCategory === "instagram"
+                          ? `${platform.instagramReviewCount} reviews | ${platform.coverage}`
+                          : `Support ${platform.support} | ${platform.coverage}`}
                   </p>
                 </div>
-                <div className="leader-score">{platform.score}</div>
+                <div className="leader-score">
+                  {activeCategory === "playstore"
+                    ? `${platform.score}⭐`
+                    : activeCategory === "reddit"
+                      ? `${platform.score}/100`
+                      : activeCategory === "instagram"
+                        ? `${platform.score}/100`
+                        : platform.score}
+                </div>
                 <Link
                   href={`/platforms/${platform.id}`}
                   className="text-link compact"
@@ -199,26 +211,34 @@ export default function Home() {
         </div>
 
         <aside className="premium-card review-day-card">
-          <div className="review-top">
-            <p className="card-tag">Review of the Day</p>
-            <span>{liveReviewOfTheDay.date}</span>
-          </div>
-          <h2>{liveReviewOfTheDay.title}</h2>
-          <p className="story-platform">{liveReviewOfTheDay.platform}</p>
-          <p>{liveReviewOfTheDay.story}</p>
-          <p className="review-impact">{liveReviewOfTheDay.impact}</p>
-          <div className="hero-actions">
-            <Link href="/review-archive" className="cta-button">
-              Read Full Story <ArrowRight size={16} />
-            </Link>
-            <button
-              type="button"
-              className="ghost-button"
-              onClick={handleShareCard}
-            >
-              <Share2 size={16} /> Share Card
-            </button>
-          </div>
+          {liveReviewOfTheDay ? (
+            <>
+              <div className="review-top">
+                <p className="card-tag">Review of the Day</p>
+                <span>{liveReviewOfTheDay.date}</span>
+              </div>
+              <h2>{liveReviewOfTheDay.title}</h2>
+              <p className="story-platform">{liveReviewOfTheDay.platform}</p>
+              <p>{liveReviewOfTheDay.story}</p>
+              <p className="review-impact">{liveReviewOfTheDay.impact}</p>
+              <div className="hero-actions">
+                <Link href="/review-archive" className="cta-button">
+                  Read Full Story <ArrowRight size={16} />
+                </Link>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={handleShareCard}
+                >
+                  <Share2 size={16} /> Share Card
+                </button>
+              </div>
+            </>
+          ) : (
+            <p className="score-label">
+              No recent reviews yet. Run scrape to populate.
+            </p>
+          )}
         </aside>
       </section>
 

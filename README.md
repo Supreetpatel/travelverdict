@@ -8,11 +8,8 @@ Set the following environment variables in your deployment:
 
 - `DATABASE_URL`
 - `CRON_SECRET` (recommended)
-- `TWITTER_BEARER_TOKEN`
-- `REDDIT_USER_AGENT`
-- `REDDIT_CLIENT_ID`
-- `REDDIT_CLIENT_SECRET`
-- `REDDIT_REFRESH_TOKEN`
+- `REDDIT_RSS_URLS` (optional, comma-separated RSS feed URLs)
+- `INSTAGRAM_URLS` (optional, comma-separated Instagram URLs)
 - `SCRAPE_REVIEW_LIMIT` (optional)
 - `SCORING_WINDOW_HOURS` (optional)
 
@@ -20,6 +17,14 @@ Manual local refresh still works with:
 
 ```bash
 npm run scrape:all
+```
+
+You can also run sources independently:
+
+```bash
+npm run scrape:playstore
+npm run scrape:reddit-rss
+npm run scrape:instagram
 ```
 
 ## Getting Started

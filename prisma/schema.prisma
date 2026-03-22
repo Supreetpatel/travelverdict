@@ -9,7 +9,7 @@ datasource db {
 enum ReviewSource {
   PLAY_STORE
   REDDIT
-  X
+  INSTAGRAM
 }
 
 enum CredibilityTier {

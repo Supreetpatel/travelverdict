@@ -1,5 +1,7 @@
 import { getRankedCategory } from "@/lib/db-ui";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   description: "Monthly support tests and response-time leaderboard.",
 };

@@ -12,7 +12,7 @@ const playfair = Playfair_Display({
 
 export const metadata = {
   title: {
-    default: "StrateStats",
+    default: "StrateStats | Independent scorecards for Indian travel platforms",
   },
   description:
     "Clear weekly scorecards for travel platform quality and support performance.",

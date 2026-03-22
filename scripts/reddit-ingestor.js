@@ -8,7 +8,7 @@ async function run() {
 
 run()
   .catch((error) => {
-    console.error("Reddit ingestor failed", error);
+    console.error("Reddit RSS ingestor failed", error);
     process.exit(1);
   })
   .finally(async () => {

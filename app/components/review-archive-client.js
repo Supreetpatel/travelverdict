@@ -2,20 +2,12 @@
 
 import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import {
-  patternReports as fallbackPatternReports,
-  reviewArchive as fallbackReviewArchive,
-} from "../data";
 
 export default function ReviewArchiveClient({ reviewArchive, patternReports }) {
   const [query, setQuery] = useState("");
   const [selectedEntry, setSelectedEntry] = useState(null);
-  const safeArchive = reviewArchive?.length
-    ? reviewArchive
-    : fallbackReviewArchive;
-  const safeReports = patternReports?.length
-    ? patternReports
-    : fallbackPatternReports;
+  const safeArchive = reviewArchive ?? [];
+  const safeReports = patternReports ?? [];
 
   const sortedArchive = useMemo(() => {
     const toTimestamp = (value) => {

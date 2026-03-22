@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import ProfileReviewFeed from "../../components/profile-review-feed";
 import { getPlatformProfile, getPlatformSlugs } from "@/lib/db-ui";
 
+export const revalidate = 0;
+
 function ScoreHistoryChart({ values }) {
   const width = 680;
   const height = 220;

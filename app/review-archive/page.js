@@ -1,6 +1,8 @@
 import ReviewArchiveClient from "../components/review-archive-client";
 import { getArchiveData } from "@/lib/db-ui";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   description: "Searchable archive and pattern reports from live review data.",
 };
