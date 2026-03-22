@@ -7,11 +7,52 @@ import { aggregatePlatformScores, scoreSignal } from "../lib/scoring.js";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
+function isLocalDatabaseUrl(url) {
+  if (!url) {
+    return false;
+  }
+
+  return /localhost|127\.0\.0\.1/i.test(url);
+}
+
+function resolveDatabaseUrl() {
+  const candidates = [
+    process.env.POSTGRES_PRISMA_URL,
+    process.env.POSTGRES_URL_NON_POOLING,
+    process.env.POSTGRES_URL,
+    process.env.DATABASE_URL,
+  ].filter(Boolean);
+
+  if (!candidates.length) {
+    return null;
+  }
+
+  if (process.env.VERCEL) {
+    const nonLocal = candidates.find((value) => !isLocalDatabaseUrl(value));
+    if (nonLocal) {
+      return nonLocal;
+    }
+
+    throw new Error(
+      "Vercel cron cannot use localhost DATABASE_URL. Set POSTGRES_PRISMA_URL or a remote DATABASE_URL.",
+    );
+  }
+
+  return process.env.DATABASE_URL ?? candidates[0];
+}
+
+const databaseUrl = resolveDatabaseUrl();
+
+if (!databaseUrl) {
   throw new Error("DATABASE_URL is required for worker scripts.");
 }
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({
+  connectionString: databaseUrl,
+  ssl: isLocalDatabaseUrl(databaseUrl)
+    ? undefined
+    : { rejectUnauthorized: false },
+});
 const adapter = new PrismaPg(pool);
 
 export const prisma = new PrismaClient({ adapter });
