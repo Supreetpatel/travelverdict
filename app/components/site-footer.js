@@ -31,12 +31,6 @@ export default function SiteFooter() {
             >
               Compare Tool
             </Link>
-            <Link
-              href="/weekly-roundup"
-              className="transition-opacity hover:opacity-50"
-            >
-              Weekly Roundup
-            </Link>
             <a
               href="mailto:hello@stratestats.in"
               className="opacity-80 hover:opacity-100 underline underline-offset-4"

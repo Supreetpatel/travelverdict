@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BackButton from "../components/back-button";
 
 export const metadata = {
   description: "Explore Support, Reliability, and Happiness deep-dive pages.",
@@ -47,6 +48,7 @@ export default function CategoriesIndexPage() {
   return (
     <main className="site-shell page-block">
       <section className="page-intro">
+        <BackButton fallbackHref="/" label="Back" />
         <p className="eyebrow">Category Deep-Dives</p>
         <h1>Choose what you want to evaluate.</h1>
         <p>

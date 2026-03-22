@@ -5,11 +5,22 @@ import {
   BadgeCheck,
   MessageSquareWarning,
   Share2,
-  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useEffect, useMemo, useState } from "react";
+
+function shortenText(value, maxLength) {
+  if (!value) {
+    return "";
+  }
+
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength).trimEnd()}...`;
+}
 
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState("playstore");
@@ -141,7 +152,7 @@ export default function Home() {
   return (
     <main className="site-shell page-block">
       <section className="leaderboard-wrap">
-        <div className="premium-card">
+        <div className="premium-card leaderboard-card">
           <p className="eyebrow">Live Scorecard</p>
           <h1 className="leaderboard-title">Top 5 Platforms This Week</h1>
           <p>
@@ -217,9 +228,13 @@ export default function Home() {
                 <p className="card-tag">Review of the Day</p>
                 <span>{liveReviewOfTheDay.date}</span>
               </div>
-              <h2>{liveReviewOfTheDay.title}</h2>
+              <h2 className="compact-review-title">
+                {shortenText(liveReviewOfTheDay.title, 72)}
+              </h2>
               <p className="story-platform">{liveReviewOfTheDay.platform}</p>
-              <p>{liveReviewOfTheDay.story}</p>
+              <p className="compact-review-text">
+                {shortenText(liveReviewOfTheDay.story, 180)}
+              </p>
               <p className="review-impact">{liveReviewOfTheDay.impact}</p>
               <div className="hero-actions">
                 <Link href="/review-archive" className="cta-button">
@@ -256,7 +271,9 @@ export default function Home() {
                 </p>
                 <span className="score-label">{signal.ago}</span>
               </div>
-              <p>{signal.text}</p>
+              <p className="compact-signal-text">
+                {shortenText(signal.text, 120)}
+              </p>
             </article>
           ))}
         </div>
@@ -287,12 +304,12 @@ export default function Home() {
         </article>
         <article className="premium-card metric-card">
           <div className="metric-icon">
-            <Sparkles size={24} />
+            <BadgeCheck size={24} />
           </div>
-          <h2>Weekly Roundup</h2>
-          <p>Quick summary of weekly score changes and one key stat.</p>
-          <Link href="/weekly-roundup" className="text-link">
-            Read weekly roundup <ArrowRight size={16} />
+          <h2>Categories</h2>
+          <p>Explore Support, Reliability, and Happiness deep-dive pages.</p>
+          <Link href="/categories" className="text-link">
+            Open categories <ArrowRight size={16} />
           </Link>
         </article>
       </section>

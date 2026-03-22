@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ProfileReviewFeed from "../../components/profile-review-feed";
+import BackButton from "../../components/back-button";
 import { getPlatformProfile, getPlatformSlugs } from "@/lib/db-ui";
 
 export const revalidate = 0;
@@ -100,6 +101,7 @@ export default async function PlatformProfilePage({ params }) {
   return (
     <main className="site-shell page-block">
       <section className="page-intro">
+        <BackButton fallbackHref="/leaderboard" label="Back" />
         <p className="eyebrow">Platform Profile</p>
         <h1>{platform.name}</h1>
         <p>
@@ -165,8 +167,8 @@ export default async function PlatformProfilePage({ params }) {
           <Link href="/compare" className="cta-button">
             Compare Platforms
           </Link>
-          <Link href="/weekly-roundup" className="ghost-button">
-            Weekly Roundup
+          <Link href="/categories" className="ghost-button">
+            Categories
           </Link>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import CompareTool from "../components/compare-tool";
+import BackButton from "../components/back-button";
 import { getComparePlatforms } from "@/lib/db-ui";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ export default async function ComparePage() {
   return (
     <main className="site-shell page-block">
       <section className="page-intro">
+        <BackButton fallbackHref="/" label="Back" />
         <p className="eyebrow">Head-to-Head</p>
         <h1>Compare two platforms before you book.</h1>
         <p>

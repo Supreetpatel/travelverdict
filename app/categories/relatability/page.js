@@ -1,4 +1,5 @@
 import { getRankedCategory } from "@/lib/db-ui";
+import BackButton from "@/app/components/back-button";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function RelatabilityDeepDivePage() {
   return (
     <main className="site-shell page-block">
       <section className="page-intro">
+        <BackButton fallbackHref="/categories" label="Back" />
         <p className="eyebrow">Category Deep-Dive</p>
         <h1>Reliability Deep-Dive</h1>
         <p>

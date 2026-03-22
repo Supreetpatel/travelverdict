@@ -14,7 +14,7 @@ const nextConfig = {
       },
       {
         source: "/about",
-        destination: "/weekly-roundup",
+        destination: "/categories",
         permanent: true,
       },
       {

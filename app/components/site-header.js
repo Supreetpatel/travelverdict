@@ -7,7 +7,6 @@ const navLinks = [
   { href: "/", label: "Home Page" },
   { href: "/compare", label: "Compare" },
   { href: "/review-archive", label: "Review Archive" },
-  { href: "/weekly-roundup", label: "Weekly Roundup" },
   { href: "/categories", label: "Categories" },
 ];
 

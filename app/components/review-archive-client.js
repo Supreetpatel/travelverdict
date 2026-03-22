@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import BackButton from "./back-button";
 
 export default function ReviewArchiveClient({ reviewArchive, patternReports }) {
   const [query, setQuery] = useState("");
@@ -48,6 +49,7 @@ export default function ReviewArchiveClient({ reviewArchive, patternReports }) {
   return (
     <main className="site-shell page-block">
       <section className="page-intro">
+        <BackButton fallbackHref="/" label="Back" />
         <p className="eyebrow">Review of the Day Archive</p>
         <h1>Full calendar and searchable history.</h1>
         <p>

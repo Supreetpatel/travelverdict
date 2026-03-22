@@ -427,6 +427,17 @@ p {
   gap: 1rem;
 }
 
+.leaderboard-wrap > .premium-card,
+.leaderboard-wrap > .review-day-card {
+  height: 100%;
+}
+
+.leaderboard-card,
+.review-day-card {
+  display: flex;
+  flex-direction: column;
+}
+
 .leaderboard-title {
   font-size: clamp(1.05rem, 3vw, 2rem);
   margin: 0.35rem 0 0.75rem;
@@ -518,6 +529,26 @@ p {
 .review-day-card {
   display: grid;
   align-content: start;
+}
+
+.compact-review-title,
+.compact-review-text,
+.compact-signal-text {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+
+.compact-review-title {
+  -webkit-line-clamp: 2;
+}
+
+.compact-review-text {
+  -webkit-line-clamp: 4;
+}
+
+.compact-signal-text {
+  -webkit-line-clamp: 3;
 }
 
 .review-top {
