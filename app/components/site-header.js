@@ -3,7 +3,8 @@
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Logo } from "./Logo";
 
 const navLinks = [
   { href: "/", label: "Home Page" },
@@ -16,10 +17,6 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [pathname]);
-
   const isActive = (href) => {
     if (href === "/") {
       return pathname === "/";
@@ -31,6 +28,10 @@ export default function SiteHeader() {
     <header className="site-shell site-header">
       <div className="shell-topbar">
         <Link href="/" className="brand-mark">
+          <span className="brand-logo-sheen" aria-hidden="true">
+            <Logo className="brand-logo brand-logo-desktop" />
+            <Logo className="brand-logo brand-logo-compact" variant="compact" />
+          </span>
           <span className="brand-name">StrateStats</span>
           <span className="brand-chip">India</span>
         </Link>

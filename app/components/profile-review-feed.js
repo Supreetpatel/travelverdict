@@ -8,12 +8,10 @@ export default function ProfileReviewFeed({ reviews }) {
     ...review,
     source:
       review.source === "PLAY_STORE"
-        ? "Google Play Store"
+        ? "Play Store"
         : review.source === "REDDIT"
           ? "Reddit RSS"
-          : review.source === "INSTAGRAM"
-            ? "Instagram"
-            : review.source,
+          : review.source,
   }));
 
   const visible = useMemo(() => {
@@ -23,7 +21,7 @@ export default function ProfileReviewFeed({ reviews }) {
     return normalizedReviews.filter((item) => item.source === source);
   }, [normalizedReviews, source]);
 
-  const options = ["All", "Reddit RSS", "Instagram", "Google Play Store"];
+  const options = ["All", "Reddit RSS", "Play Store"];
 
   return (
     <section className="premium-card">

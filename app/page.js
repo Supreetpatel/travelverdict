@@ -5,6 +5,7 @@ import {
   BadgeCheck,
   MessageSquareWarning,
   Share2,
+  Star,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -23,6 +24,15 @@ function shortenText(value, maxLength) {
   return `${value.slice(0, maxLength).trimEnd()}...`;
 }
 
+function PremiumStarBadge() {
+  return (
+    <span className="premium-star-badge" aria-hidden="true">
+      <span className="premium-star-ring" />
+      <Star size={14} className="premium-star-core" fill="currentColor" />
+    </span>
+  );
+}
+
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState("playstore");
   const [apiRanking, setApiRanking] = useState([]);
@@ -34,7 +44,6 @@ export default function Home() {
   const leaderboardCategories = [
     { id: "playstore", label: "Play Store" },
     { id: "reddit", label: "Reddit" },
-    { id: "instagram", label: "Instagram" },
   ];
 
   useEffect(() => {
@@ -214,19 +223,18 @@ export default function Home() {
                       ? `${platform.playStoreReviewCount} reviews | ${platform.coverage}`
                       : activeCategory === "reddit"
                         ? `${platform.redditReviewCount} reviews | ${platform.coverage}`
-                        : activeCategory === "instagram"
-                          ? `${platform.instagramReviewCount} reviews | ${platform.coverage}`
-                          : `Support ${platform.support} | ${platform.coverage}`}
+                        : `Support ${platform.support} | ${platform.coverage}`}
                   </p>
                 </div>
                 <div className="leader-score">
-                  {activeCategory === "playstore"
-                    ? `${platform.score}⭐`
-                    : activeCategory === "reddit"
-                      ? `${platform.score}/100`
-                      : activeCategory === "instagram"
-                        ? `${platform.score}/100`
-                        : platform.score}
+                  {activeCategory === "playstore" ? (
+                    <span className="score-with-icon">
+                      <PremiumStarBadge />
+                      {platform.score}
+                    </span>
+                  ) : (
+                    `${platform.score}/100`
+                  )}
                 </div>
                 <Link
                   href={`/platforms/${platform.id}`}

@@ -45,18 +45,17 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const requestedCategory = searchParams.get("category") ?? "composite";
   const category =
-    requestedCategory === "forums" ? "instagram" : requestedCategory;
+    requestedCategory === "forums" ? "reddit" : requestedCategory;
   const column = categoryColumn[category] ?? categoryColumn.composite;
 
   try {
     let platforms;
 
-    if (["playstore", "reddit", "instagram"].includes(category)) {
+    if (["playstore", "reddit"].includes(category)) {
       // For source-specific categories
       const sourceMap = {
         playstore: "PLAY_STORE",
         reddit: "REDDIT",
-        instagram: "INSTAGRAM",
       };
       const source = sourceMap[category];
 
@@ -89,7 +88,7 @@ export async function GET(request) {
         )
         .slice(0, 5);
 
-      // If no Reddit/Instagram reviews exist yet, keep leaderboard populated with top platforms.
+      // If no source reviews exist yet, keep leaderboard populated with top platforms.
       if (rankedBySource.length === 0 && category !== "playstore") {
         const fallbackPlatforms = await db`
           SELECT
@@ -156,10 +155,7 @@ export async function GET(request) {
             ) AS "playStoreAvgRating",
             COUNT(*) FILTER (
               WHERE "source" = 'REDDIT'::"ReviewSource"
-            )::int AS "redditReviewCount",
-            COUNT(*) FILTER (
-              WHERE "source" = 'INSTAGRAM'::"ReviewSource"
-            )::int AS "instagramReviewCount"
+            )::int AS "redditReviewCount"
           FROM "Review"
           WHERE "platformId" = ${platform.id}
         `;
@@ -174,7 +170,7 @@ export async function GET(request) {
 
         if (category === "playstore") {
           score = parseFloat(playStoreRating || 0);
-          coverage = `${reviewStats.playStoreReviewCount} reviews from Google Play Store`;
+          coverage = `${reviewStats.playStoreReviewCount} reviews from Play Store`;
         } else if (category === "reddit") {
           // If sourceScores exist (from source-based fetch), use it; otherwise calculate
           const sourceScore =
@@ -182,14 +178,6 @@ export async function GET(request) {
             (await calculateSourceScores(platform.id, "REDDIT")).compositeScore;
           score = sourceScore;
           coverage = `${reviewStats.redditReviewCount} reviews from Reddit`;
-        } else if (category === "instagram") {
-          // If sourceScores exist (from source-based fetch), use it; otherwise calculate
-          const sourceScore =
-            platform.sourceScores?.compositeScore ||
-            (await calculateSourceScores(platform.id, "INSTAGRAM"))
-              .compositeScore;
-          score = sourceScore;
-          coverage = `${reviewStats.instagramReviewCount} reviews from Instagram`;
         } else {
           score =
             category === "support"
@@ -211,7 +199,6 @@ export async function GET(request) {
           playStoreRating: playStoreRating ? parseFloat(playStoreRating) : null,
           playStoreReviewCount: reviewStats.playStoreReviewCount,
           redditReviewCount: reviewStats.redditReviewCount,
-          instagramReviewCount: reviewStats.instagramReviewCount,
           coverage,
         };
       }),
@@ -223,9 +210,6 @@ export async function GET(request) {
       }
       if (category === "reddit") {
         return item.redditReviewCount ?? 0;
-      }
-      if (category === "instagram") {
-        return item.instagramReviewCount ?? 0;
       }
       return 0;
     };

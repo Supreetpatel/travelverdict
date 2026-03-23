@@ -130,6 +130,7 @@ export async function refreshPlatformScores(platformId) {
 
   const reviews = await db`
     SELECT
+      "source",
       "supportSignal",
       "relatabilitySignal",
       "helpfulnessSignal",
@@ -157,7 +158,39 @@ export async function refreshPlatformScores(platformId) {
     };
   });
 
-  const scores = aggregatePlatformScores(entries);
+  const playStoreEntries = reviews
+    .filter((review) => review.source === "PLAY_STORE")
+    .map((review) => {
+      const credibilityWeight =
+        review.credibilityTier === "HIGH"
+          ? 1.35
+          : review.credibilityTier === "MEDIUM"
+            ? 1.0
+            : 0.65;
+
+      return {
+        credibilityTier: review.credibilityTier,
+        credibilityWeight,
+        supportSignal: review.supportSignal,
+        relatabilitySignal: review.relatabilitySignal,
+        helpfulnessSignal: review.helpfulnessSignal,
+        sentimentScore: 0,
+      };
+    });
+
+  const allSourceScores = aggregatePlatformScores(entries);
+  const playStoreScores = aggregatePlatformScores(playStoreEntries);
+
+  const scores = {
+    supportScore: allSourceScores.supportScore,
+    relatabilityScore: playStoreScores.relatabilityScore,
+    helpfulnessScore: playStoreScores.helpfulnessScore,
+    compositeScore: Math.round(
+      allSourceScores.supportScore * 0.35 +
+        playStoreScores.relatabilityScore * 0.3 +
+        playStoreScores.helpfulnessScore * 0.35,
+    ),
+  };
 
   await db`
     UPDATE "Platform"

@@ -96,6 +96,50 @@ p {
   gap: 0.6rem;
 }
 
+.brand-logo-sheen {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 999px;
+  isolation: isolate;
+}
+
+.brand-logo-sheen::after {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  transform: translateX(-170%) rotate(18deg);
+  background: linear-gradient(
+    100deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.5) 49%,
+    transparent 64%
+  );
+  pointer-events: none;
+}
+
+.brand-logo {
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 auto;
+  transform: translateY(0);
+  transition: transform 220ms ease;
+}
+
+.brand-logo-compact {
+  display: none;
+}
+
+.brand-mark:hover .brand-logo {
+  transform: translateY(-1px);
+}
+
+.brand-mark:hover .brand-logo-sheen::after {
+  animation: crestSheen 760ms ease;
+}
+
 .brand-name {
   font-family: var(--font-serif);
   font-size: clamp(1.1rem, 2vw, 1.4rem);
@@ -539,6 +583,46 @@ p {
   line-height: 1;
   color: var(--color-premium-wine);
   font-weight: 700;
+}
+
+.score-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+}
+
+.premium-star-badge {
+  position: relative;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    circle at 32% 28%,
+    #fff6cd 0%,
+    #e5b96a 42%,
+    #8e611f 100%
+  );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #f5d28f 65%, transparent),
+    0 5px 12px -7px rgba(107, 60, 11, 0.7);
+}
+
+.premium-star-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #f3d07f 70%, transparent);
+  opacity: 0.8;
+}
+
+.premium-star-core {
+  color: #fff5cc;
+  stroke: #7f4f13;
+  stroke-width: 1.8;
+  filter: drop-shadow(0 1px 1px rgba(46, 24, 2, 0.3));
 }
 
 .text-link.compact {
@@ -1117,6 +1201,21 @@ p {
     min-width: 0;
   }
 
+  .brand-logo {
+    width: 2.05rem;
+    height: 2.05rem;
+  }
+
+  .brand-logo-desktop {
+    display: none;
+  }
+
+  .brand-logo-compact {
+    display: inline-block;
+    width: 1.95rem;
+    height: 1.95rem;
+  }
+
   .brand-name {
     font-size: 1.03rem;
   }
@@ -1143,6 +1242,14 @@ p {
     width: 100%;
   }
 
+  @keyframes crestSheen {
+    0% {
+      transform: translateX(-170%) rotate(18deg);
+    }
+    100% {
+      transform: translateX(170%) rotate(18deg);
+    }
+  }
   .hero-actions .cta-button,
   .hero-actions .ghost-button {
     width: 100%;

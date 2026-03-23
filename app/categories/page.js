@@ -34,8 +34,8 @@ const sourceRules = [
   },
   {
     metric: "Happiness",
-    source: "Instagram",
-    note: "Users tag brands in photos and Reels. High Happiness means high tags and positive emojis.",
+    source: "Play Store",
+    note: "Review text and ratings reveal delight signals, onboarding clarity, and perceived value.",
   },
   {
     metric: "Support",

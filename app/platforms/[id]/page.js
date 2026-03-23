@@ -6,18 +6,39 @@ import { getPlatformProfile, getPlatformSlugs } from "@/lib/db-ui";
 
 export const revalidate = 0;
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://travelverdict.vercel.app";
+
+function buildAbsoluteUrl(pathname) {
+  return new URL(pathname, SITE_URL).toString();
+}
+
 function ScoreHistoryChart({ values }) {
+  const pointsSource = Array.isArray(values)
+    ? values.filter((item) => Number.isFinite(item))
+    : [];
+  const normalizedValues =
+    pointsSource.length > 1
+      ? pointsSource
+      : pointsSource.length === 1
+        ? [pointsSource[0], pointsSource[0]]
+        : [50, 50];
+
   const width = 680;
   const height = 220;
   const padding = 28;
-  const min = Math.min(...values) - 2;
-  const max = Math.max(...values) + 2;
-  const stepX = (width - padding * 2) / (values.length - 1);
+  const minValue = Math.min(...normalizedValues);
+  const maxValue = Math.max(...normalizedValues);
+  const edgePadding = minValue === maxValue ? 4 : 2;
+  const min = minValue - edgePadding;
+  const max = maxValue + edgePadding;
+  const stepX = (width - padding * 2) / (normalizedValues.length - 1);
+  const range = max - min || 1;
 
-  const points = values
+  const points = normalizedValues
     .map((value, index) => {
       const x = padding + index * stepX;
-      const ratio = (value - min) / (max - min);
+      const ratio = (value - min) / range;
       const y = height - padding - ratio * (height - padding * 2);
       return `${x},${y}`;
     })
@@ -39,9 +60,9 @@ function ScoreHistoryChart({ values }) {
         className="chart-bg"
       />
       <polyline points={points} fill="none" className="chart-line" />
-      {values.map((value, index) => {
+      {normalizedValues.map((value, index) => {
         const x = padding + index * stepX;
-        const ratio = (value - min) / (max - min);
+        const ratio = (value - min) / range;
         const y = height - padding - ratio * (height - padding * 2);
         return (
           <circle
@@ -67,12 +88,42 @@ export async function generateMetadata({ params }) {
   const platform = await getPlatformProfile(route.id);
 
   if (!platform) {
-    return { title: "StrateStats" };
+    return {
+      title: "Platform Not Found | StrateStats",
+      description:
+        "Explore independent travel platform scorecards with category breakdowns and verified reviews.",
+    };
   }
 
+  const profileUrl = buildAbsoluteUrl(`/platforms/${platform.id}`);
+  const title = `${platform.name} Platform Profile | StrateStats`;
+  const description = `${platform.name} quality profile with composite score ${platform.scores.composite}, category-level breakdowns, verified reviews, and Bharat coverage insights.`;
+
   return {
-    title: platform.name,
-    description: `Score breakdown and verified reviews for ${platform.name}.`,
+    title,
+    description,
+    alternates: {
+      canonical: profileUrl,
+    },
+    keywords: [
+      `${platform.name} reviews`,
+      `${platform.name} support score`,
+      `${platform.name} reliability score`,
+      "travel platform scorecard",
+      "Indian travel platform ranking",
+    ],
+    openGraph: {
+      title,
+      description,
+      url: profileUrl,
+      type: "article",
+      siteName: "StrateStats",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }
 
@@ -83,6 +134,27 @@ export default async function PlatformProfilePage({ params }) {
   if (!platform) {
     notFound();
   }
+
+  const profileUrl = buildAbsoluteUrl(`/platforms/${platform.id}`);
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: platform.name,
+    brand: {
+      "@type": "Brand",
+      name: platform.name,
+    },
+    description:
+      "Independent travel platform profile with composite and category-level quality scores.",
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: platform.scores.composite,
+      bestRating: 100,
+      worstRating: 0,
+      ratingCount: platform.verifiedReviews.length,
+    },
+    url: profileUrl,
+  };
 
   const scoreCards = [
     {
@@ -100,6 +172,10 @@ export default async function PlatformProfilePage({ params }) {
 
   return (
     <main className="site-shell page-block">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <section className="page-intro">
         <BackButton fallbackHref="/leaderboard" label="Back" />
         <p className="eyebrow">Platform Profile</p>
