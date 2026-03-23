@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 function shortenText(value, maxLength) {
   if (!value) {
@@ -32,8 +32,8 @@ export default function Home() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   const leaderboardCategories = [
-    { id: "playstore", label: "Play Store Reviews" },
-    { id: "reddit", label: "Reddit Reviews" },
+    { id: "playstore", label: "Play Store" },
+    { id: "reddit", label: "Reddit" },
     { id: "instagram", label: "Instagram" },
   ];
 
