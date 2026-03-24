@@ -1,16 +1,61 @@
 "use client";
 
-import {
-  ArrowRight,
-  BadgeCheck,
-  MessageSquareWarning,
-  Share2,
-  Star,
-  X,
-} from "lucide-react";
+import { ArrowRight, Share2, Star, X } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
+
+const FALLBACK_REVIEW_OF_THE_DAY = {
+  date: "Today",
+  platform: "StrateStats Network",
+  title: "Users are prioritizing faster support response and cleaner check-in",
+  story:
+    "Recent traveler feedback highlights two recurring priorities: faster support turnaround and friction-free check-in. Platforms improving these basics continue to earn stronger trust and repeat usage.",
+  impact:
+    "Signal impact: Baseline watchlist is active while live feed refreshes.",
+};
+
+const FALLBACK_TRENDING_SIGNALS = [
+  {
+    id: "fallback-signal-1",
+    platform: "StrateStats Network",
+    source: "Insights",
+    sentiment: "neutral",
+    text: "Service responsiveness and first-response time are being mentioned more often across user feedback.",
+    ago: "Now",
+  },
+  {
+    id: "fallback-signal-2",
+    platform: "StrateStats Network",
+    source: "Insights",
+    sentiment: "positive",
+    text: "Clear cancellation policies and proactive support updates are contributing to better overall sentiment.",
+    ago: "Now",
+  },
+];
+
+function normalizeReviewOfTheDay(review) {
+  if (!review || typeof review !== "object") {
+    return FALLBACK_REVIEW_OF_THE_DAY;
+  }
+
+  return {
+    ...FALLBACK_REVIEW_OF_THE_DAY,
+    ...review,
+  };
+}
+
+function normalizeTrendingSignals(signals) {
+  if (!Array.isArray(signals) || signals.length === 0) {
+    return FALLBACK_TRENDING_SIGNALS;
+  }
+
+  return signals.map((signal, index) => ({
+    ...FALLBACK_TRENDING_SIGNALS[index % FALLBACK_TRENDING_SIGNALS.length],
+    ...signal,
+    id: signal?.id ?? `fallback-signal-dynamic-${index}`,
+  }));
+}
 
 function shortenText(value, maxLength) {
   if (!value) {
@@ -37,13 +82,19 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState("playstore");
   const [apiRanking, setApiRanking] = useState([]);
   const [isLoadingRanking, setIsLoadingRanking] = useState(false);
-  const [apiReviewOfDay, setApiReviewOfDay] = useState(null);
-  const [apiTrendingSignals, setApiTrendingSignals] = useState([]);
+  const [isLoadingHomeFeed, setIsLoadingHomeFeed] = useState(true);
+  const [apiReviewOfDay, setApiReviewOfDay] = useState(
+    FALLBACK_REVIEW_OF_THE_DAY,
+  );
+  const [apiTrendingSignals, setApiTrendingSignals] = useState(
+    FALLBACK_TRENDING_SIGNALS,
+  );
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   const leaderboardCategories = [
     { id: "playstore", label: "Play Store" },
     { id: "reddit", label: "Reddit" },
+    { id: "price", label: "Price" },
   ];
 
   useEffect(() => {
@@ -51,6 +102,7 @@ export default function Home() {
 
     async function loadLeaderboard() {
       setIsLoadingRanking(true);
+      setApiRanking([]);
 
       try {
         const response = await fetch(
@@ -98,17 +150,19 @@ export default function Home() {
         const payload = await response.json();
 
         if (!isCancelled) {
-          setApiReviewOfDay(payload.reviewOfTheDay ?? null);
+          setApiReviewOfDay(normalizeReviewOfTheDay(payload.reviewOfTheDay));
           setApiTrendingSignals(
-            Array.isArray(payload.trendingSignals)
-              ? payload.trendingSignals
-              : [],
+            normalizeTrendingSignals(payload.trendingSignals),
           );
         }
       } catch {
         if (!isCancelled) {
-          setApiReviewOfDay(null);
-          setApiTrendingSignals([]);
+          setApiReviewOfDay(FALLBACK_REVIEW_OF_THE_DAY);
+          setApiTrendingSignals(FALLBACK_TRENDING_SIGNALS);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingHomeFeed(false);
         }
       }
     }
@@ -205,50 +259,86 @@ export default function Home() {
           </div>
 
           <div className="leaderboard-list">
-            {isLoadingRanking && !ranking.length ? (
-              <p className="score-label">Refreshing live leaderboard...</p>
-            ) : null}
+            {isLoadingRanking
+              ? Array.from({ length: 5 }, (_, index) => (
+                  <article
+                    key={`leader-skeleton-${index}`}
+                    className="leader-row leader-row-skeleton"
+                    aria-hidden="true"
+                  >
+                    <div className="skeleton-block skeleton-circle" />
+                    <div className="leader-skeleton-body">
+                      <div className="skeleton-block skeleton-line short" />
+                      <div className="skeleton-block skeleton-line" />
+                    </div>
+                    <div className="skeleton-block skeleton-line tiny" />
+                    <div className="skeleton-block skeleton-line small" />
+                  </article>
+                ))
+              : null}
             {ranking.length === 0 && !isLoadingRanking ? (
               <p className="score-label">
                 No platform data available yet. Run scrape to populate.
               </p>
             ) : null}
-            {ranking.map((platform) => (
-              <article key={platform.id} className="leader-row">
-                <div className="leader-rank">#{platform.rank}</div>
-                <div>
-                  <h2>{platform.name}</h2>
-                  <p className="score-label">
-                    {activeCategory === "playstore"
-                      ? `${platform.playStoreReviewCount} reviews | ${platform.coverage}`
-                      : activeCategory === "reddit"
-                        ? `${platform.redditReviewCount} reviews | ${platform.coverage}`
-                        : `Support ${platform.support} | ${platform.coverage}`}
-                  </p>
-                </div>
-                <div className="leader-score">
-                  {activeCategory === "playstore" ? (
-                    <span className="score-with-icon">
-                      <PremiumStarBadge />
-                      {platform.score}
-                    </span>
-                  ) : (
-                    `${platform.score}/100`
-                  )}
-                </div>
-                <Link
-                  href={`/platforms/${platform.id}`}
-                  className="text-link compact"
-                >
-                  View profile <ArrowRight size={14} />
-                </Link>
-              </article>
-            ))}
+            {!isLoadingRanking
+              ? ranking.map((platform) => (
+                  <article key={platform.id} className="leader-row">
+                    <div className="leader-rank">#{platform.rank}</div>
+                    <div>
+                      <h2>{platform.name}</h2>
+                      <p className="score-label">
+                        {activeCategory === "playstore"
+                          ? `${platform.playStoreReviewCount} reviews | ${platform.coverage}`
+                          : activeCategory === "reddit"
+                            ? `${platform.redditReviewCount} reviews | ${platform.coverage}`
+                            : activeCategory === "price"
+                              ? `${platform.coverage}`
+                              : `Support ${platform.support} | ${platform.coverage}`}
+                      </p>
+                    </div>
+                    <div className="leader-score">
+                      {activeCategory === "playstore" ? (
+                        <span className="score-with-icon">
+                          <PremiumStarBadge />
+                          {Number(platform.score || 0).toFixed(1)}
+                        </span>
+                      ) : activeCategory === "price" ? (
+                        `₹${Number(platform.score || 0).toLocaleString("en-IN")}`
+                      ) : (
+                        `${Number(platform.score || 0)}`
+                      )}
+                    </div>
+                    <Link
+                      href={`/platforms/${platform.id}`}
+                      className="text-link compact"
+                    >
+                      View profile <ArrowRight size={14} />
+                    </Link>
+                  </article>
+                ))
+              : null}
           </div>
         </div>
 
         <aside className="premium-card review-day-card">
-          {liveReviewOfTheDay ? (
+          {isLoadingHomeFeed ? (
+            <div className="review-day-skeleton" aria-hidden="true">
+              <div className="review-top">
+                <div className="skeleton-block skeleton-pill" />
+                <div className="skeleton-block skeleton-line tiny" />
+              </div>
+              <div className="skeleton-block skeleton-line" />
+              <div className="skeleton-block skeleton-line short" />
+              <div className="skeleton-block skeleton-line" />
+              <div className="skeleton-block skeleton-line" />
+              <div className="skeleton-block skeleton-line short" />
+              <div className="hero-actions">
+                <div className="skeleton-block skeleton-button" />
+                <div className="skeleton-block skeleton-button" />
+              </div>
+            </div>
+          ) : (
             <>
               <div className="review-top">
                 <p className="card-tag">Review of the Day</p>
@@ -279,10 +369,6 @@ export default function Home() {
                 </button>
               </div>
             </>
-          ) : (
-            <p className="score-label">
-              No recent reviews yet. Run scrape to populate.
-            </p>
           )}
         </aside>
       </section>
@@ -290,58 +376,39 @@ export default function Home() {
       <section className="premium-strip">
         <h2>Trending Signals</h2>
         <div className="card-grid two-up">
-          {liveTrendingSignals.map((signal) => (
-            <article
-              key={signal.id}
-              className={`story-card ${signal.sentiment}`}
-            >
-              <div className="signal-head">
-                <p className="story-platform">
-                  {signal.platform} | {signal.source}
-                </p>
-                <span className="score-label">{signal.ago}</span>
-              </div>
-              <p className="compact-signal-text">
-                {shortenText(signal.text, 120)}
-              </p>
-            </article>
-          ))}
+          {isLoadingHomeFeed
+            ? Array.from({ length: 2 }, (_, index) => (
+                <article
+                  key={`trending-skeleton-${index}`}
+                  className="story-card skeleton-card"
+                  aria-hidden="true"
+                >
+                  <div className="signal-head">
+                    <div className="skeleton-block skeleton-line short" />
+                    <div className="skeleton-block skeleton-line tiny" />
+                  </div>
+                  <div className="skeleton-block skeleton-line" />
+                  <div className="skeleton-block skeleton-line" />
+                  <div className="skeleton-block skeleton-line short" />
+                </article>
+              ))
+            : liveTrendingSignals.map((signal) => (
+                <article
+                  key={signal.id}
+                  className={`story-card ${signal.sentiment}`}
+                >
+                  <div className="signal-head">
+                    <p className="story-platform">
+                      {signal.platform} | {signal.source}
+                    </p>
+                    <span className="score-label">{signal.ago}</span>
+                  </div>
+                  <p className="compact-signal-text">
+                    {shortenText(signal.text, 120)}
+                  </p>
+                </article>
+              ))}
         </div>
-      </section>
-
-      <section className="card-grid three-up">
-        <article className="premium-card metric-card">
-          <div className="metric-icon">
-            <BadgeCheck size={24} />
-          </div>
-          <h2>Platform Profiles</h2>
-          <p>
-            See score details, review sources, quality trend, and coverage map.
-          </p>
-          <Link href="/platforms/aorta-rooms" className="text-link">
-            Open sample profile <ArrowRight size={16} />
-          </Link>
-        </article>
-        <article className="premium-card metric-card">
-          <div className="metric-icon">
-            <MessageSquareWarning size={24} />
-          </div>
-          <h2>Compare Tool</h2>
-          <p>Compare two platforms side by side with use-case filters.</p>
-          <Link href="/compare" className="text-link">
-            Compare now <ArrowRight size={16} />
-          </Link>
-        </article>
-        <article className="premium-card metric-card">
-          <div className="metric-icon">
-            <BadgeCheck size={24} />
-          </div>
-          <h2>Categories</h2>
-          <p>Explore Support, Reliability, and Happiness deep-dive pages.</p>
-          <Link href="/categories" className="text-link">
-            Open categories <ArrowRight size={16} />
-          </Link>
-        </article>
       </section>
 
       {isReviewModalOpen && liveReviewOfTheDay ? (

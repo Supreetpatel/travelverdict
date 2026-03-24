@@ -1,14 +1,49 @@
 "use client";
 
-import { X } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  BadgeCheck,
+  ChevronLeft,
+  ChevronRight,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import BackButton from "./back-button";
+
+function getPatternReportTone(report) {
+  const text = `${report.title} ${report.insight}`.toLowerCase();
+
+  if (text.includes("negative") || text.includes("low-credibility")) {
+    return {
+      tone: "warning",
+      icon: AlertTriangle,
+      label: "Watch",
+    };
+  }
+
+  if (text.includes("positive") || text.includes("recovery")) {
+    return {
+      tone: "success",
+      icon: BadgeCheck,
+      label: "Good",
+    };
+  }
+
+  return {
+    tone: "neutral",
+    icon: Activity,
+    label: "Insight",
+  };
+}
 
 export default function ReviewArchiveClient({ reviewArchive, patternReports }) {
   const [query, setQuery] = useState("");
   const [selectedEntry, setSelectedEntry] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const safeArchive = reviewArchive ?? [];
   const safeReports = patternReports ?? [];
+  const PAGE_SIZE = 24;
 
   const sortedArchive = useMemo(() => {
     const toTimestamp = (value) => {
@@ -32,6 +67,22 @@ export default function ReviewArchiveClient({ reviewArchive, patternReports }) {
         .includes(term),
     );
   }, [query, sortedArchive]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   useEffect(() => {
     if (!selectedEntry) {
@@ -70,8 +121,8 @@ export default function ReviewArchiveClient({ reviewArchive, patternReports }) {
           />
         </div>
         <div className="archive-grid">
-          {filtered.length ? (
-            filtered.map((entry, index) => (
+          {paginated.length ? (
+            paginated.map((entry, index) => (
               <article
                 key={`${entry.date}-${entry.title}-${index}`}
                 className="story-card neutral"
@@ -98,17 +149,60 @@ export default function ReviewArchiveClient({ reviewArchive, patternReports }) {
             </p>
           )}
         </div>
+        {filtered.length ? (
+          <div className="archive-pagination">
+            <button
+              type="button"
+              className="archive-page-button"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="archive-page-icon" aria-hidden="true" />
+              <span>Previous</span>
+            </button>
+            <p className="archive-page-status">
+              Page {currentPage} of {totalPages} | {filtered.length} reviews
+            </p>
+            <button
+              type="button"
+              className="archive-page-button"
+              onClick={() =>
+                setCurrentPage((page) => Math.min(totalPages, page + 1))
+              }
+              disabled={currentPage === totalPages}
+            >
+              <span>Next</span>
+              <ChevronRight className="archive-page-icon" aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
       </section>
 
       <section className="premium-card">
         <p className="eyebrow">Pattern Reports</p>
-        <div className="card-grid three-up">
-          {safeReports.map((report) => (
-            <article key={report.title} className="story-card positive">
-              <h3>{report.title}</h3>
-              <p>{report.insight}</p>
-            </article>
-          ))}
+        <div className="card-grid three-up pattern-report-grid">
+          {safeReports.map((report) => {
+            const appearance = getPatternReportTone(report);
+            const Icon = appearance.icon;
+
+            return (
+              <article
+                key={report.title}
+                className={`pattern-report-card ${appearance.tone}`}
+              >
+                <div className="pattern-report-head">
+                  <span className="pattern-report-icon" aria-hidden="true">
+                    <Icon size={16} />
+                  </span>
+                  <span className="pattern-report-chip">
+                    {appearance.label}
+                  </span>
+                </div>
+                <h3>{report.title}</h3>
+                <p className="pattern-report-text">{report.insight}</p>
+              </article>
+            );
+          })}
         </div>
       </section>
 

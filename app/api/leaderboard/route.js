@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/neon-db";
 import { aggregatePlatformScores, scoreSignal } from "@/lib/scoring";
+import gplay from "google-play-scraper";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,55 @@ const categoryColumn = {
   relatability: "relatabilityScore",
   helpfulness: "helpfulnessScore",
 };
+
+function getEstimatedHotelPriceByPlatform(slug, name) {
+  const normalized = String(slug || name || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+  const estimatedPriceMap = {
+    airbnb: 5200,
+    bookingcom: 4700,
+    oyo: 1900,
+    makemytrip: 3600,
+    agoda: 3300,
+    hotelscom: 4900,
+    expedia: 5400,
+    tripadvisor: 4100,
+    goibibo: 3400,
+    yatra: 3200,
+    cleartrip: 3500,
+    ixigo: 2800,
+    easemytrip: 3000,
+    fabhotels: 2300,
+    treebo: 2500,
+    trivago: 4000,
+  };
+
+  const matchedKey = Object.keys(estimatedPriceMap).find((key) =>
+    normalized.includes(key),
+  );
+
+  return matchedKey ? estimatedPriceMap[matchedKey] : 3500;
+}
+
+async function fetchLivePlayStoreRating(appId) {
+  if (!appId) {
+    return null;
+  }
+
+  try {
+    const app = await gplay.app({
+      appId,
+      lang: "en",
+      country: "in",
+    });
+
+    return typeof app.score === "number" ? Number(app.score.toFixed(2)) : null;
+  } catch {
+    return null;
+  }
+}
 
 // Calculate scores for a specific source
 async function calculateSourceScores(platformId, source) {
@@ -64,6 +114,7 @@ export async function GET(request) {
           "id",
           "slug",
           "name",
+          "playStoreAppId",
           "logoUrl",
           "supportScore",
           "relatabilityScore",
@@ -95,6 +146,7 @@ export async function GET(request) {
             "id",
             "slug",
             "name",
+            "playStoreAppId",
             "logoUrl",
             "supportScore",
             "relatabilityScore",
@@ -125,6 +177,7 @@ export async function GET(request) {
           "id",
           "slug",
           "name",
+          "playStoreAppId",
           "logoUrl",
           "supportScore",
           "relatabilityScore",
@@ -165,12 +218,29 @@ export async function GET(request) {
             ? Number(reviewStats.playStoreAvgRating).toFixed(2)
             : null;
 
+        const livePlayStoreRating =
+          category === "playstore"
+            ? await fetchLivePlayStoreRating(platform.playStoreAppId)
+            : null;
+
+        const effectivePlayStoreRating =
+          livePlayStoreRating ??
+          (playStoreRating ? parseFloat(playStoreRating) : null);
+
         let score;
         let coverage;
 
         if (category === "playstore") {
-          score = parseFloat(playStoreRating || 0);
-          coverage = `${reviewStats.playStoreReviewCount} reviews from Play Store`;
+          score = effectivePlayStoreRating ?? 0;
+          coverage = livePlayStoreRating
+            ? "Live rating from Play Store listing"
+            : `${reviewStats.playStoreReviewCount} reviews from Play Store`;
+        } else if (category === "price") {
+          score = getEstimatedHotelPriceByPlatform(
+            platform.slug,
+            platform.name,
+          );
+          coverage = "Estimated average hotel listing price / night";
         } else if (category === "reddit") {
           // If sourceScores exist (from source-based fetch), use it; otherwise calculate
           const sourceScore =
@@ -196,7 +266,7 @@ export async function GET(request) {
           logoUrl: platform.logoUrl,
           score,
           support: `${platform.supportScore || 50} score`,
-          playStoreRating: playStoreRating ? parseFloat(playStoreRating) : null,
+          playStoreRating: effectivePlayStoreRating,
           playStoreReviewCount: reviewStats.playStoreReviewCount,
           redditReviewCount: reviewStats.redditReviewCount,
           coverage,
@@ -218,7 +288,10 @@ export async function GET(request) {
     // Tie-breakers: more source reviews first, then alphabetical by platform name.
     const data = rawData
       .sort((a, b) => {
-        const scoreDiff = (Number(b.score) || 0) - (Number(a.score) || 0);
+        const scoreDiff =
+          category === "price"
+            ? (Number(a.score) || 0) - (Number(b.score) || 0)
+            : (Number(b.score) || 0) - (Number(a.score) || 0);
         if (scoreDiff !== 0) {
           return scoreDiff;
         }

@@ -1,5 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  BedDouble,
+  Heart,
+  MessageSquare,
+  Shield,
+  Users,
+  Wrench,
+} from "lucide-react";
 import ProfileReviewFeed from "../../components/profile-review-feed";
 import BackButton from "../../components/back-button";
 import { getPlatformProfile, getPlatformSlugs } from "@/lib/db-ui";
@@ -161,12 +169,19 @@ export default async function PlatformProfilePage({ params }) {
       key: "helpfulness",
       label: "Happiness",
       score: platform.scores.helpfulness,
+      icon: Heart,
     },
-    { key: "support", label: "Support", score: platform.scores.support },
+    {
+      key: "support",
+      label: "Support",
+      score: platform.scores.support,
+      icon: Shield,
+    },
     {
       key: "relatability",
       label: "Reliability",
       score: platform.scores.relatability,
+      icon: Wrench,
     },
   ];
 
@@ -186,14 +201,52 @@ export default async function PlatformProfilePage({ params }) {
         </p>
       </section>
 
-      <section className="card-grid three-up">
+      <section className="card-grid three-up profile-stat-grid">
+        <article className="premium-card profile-stat-card">
+          <div className="profile-stat-head">
+            <p className="card-tag">Maximum Users Used</p>
+            <span className="profile-stat-icon" aria-hidden="true">
+              <Users size={16} />
+            </span>
+          </div>
+          <p className="score-number profile-stat-value">
+            {platform.profileStats.maxUsersUsed}
+          </p>
+        </article>
+        <article className="premium-card profile-stat-card">
+          <div className="profile-stat-head">
+            <p className="card-tag">Average Hotel Price</p>
+            <span className="profile-stat-icon" aria-hidden="true">
+              <BedDouble size={16} />
+            </span>
+          </div>
+          <p className="score-number profile-stat-value">
+            {platform.profileStats.averagePrice}
+          </p>
+        </article>
+        <article className="premium-card profile-stat-card">
+          <div className="profile-stat-head">
+            <p className="card-tag">Total Reviews</p>
+            <span className="profile-stat-icon" aria-hidden="true">
+              <MessageSquare size={16} />
+            </span>
+          </div>
+          <p className="score-number profile-stat-value">
+            {platform.profileStats.totalReviews}
+          </p>
+        </article>
+      </section>
+
+      <section className="card-grid three-up profile-stat-grid">
         {scoreCards.map((item) => (
-          <article key={item.key} className="premium-card">
-            <p className="card-tag">{item.label}</p>
-            <p className="score-number">{item.score}</p>
-            <div className="bar-track">
-              <div className="bar-fill" style={{ width: `${item.score}%` }} />
+          <article key={item.key} className="premium-card profile-stat-card">
+            <div className="profile-stat-head">
+              <p className="card-tag">{item.label}</p>
+              <span className="profile-stat-icon" aria-hidden="true">
+                <item.icon size={16} />
+              </span>
             </div>
+            <p className="score-number profile-stat-value">{item.score}</p>
           </article>
         ))}
       </section>
