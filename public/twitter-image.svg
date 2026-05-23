@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675">
+  <defs>
+    <linearGradient id="g2" x1="0" x2="1">
+      <stop offset="0%" stop-color="#08203a" />
+      <stop offset="100%" stop-color="#0ea5a9" />
+    </linearGradient>
+    <style>
+      .title { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; fill: #fff; font-size: 48px; font-weight: 700 }
+      .subtitle { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; fill: rgba(255,255,255,0.9); font-size: 22px }
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#g2)" />
+  <text x="72" y="260" class="title">StrateStats</text>
+  <text x="72" y="310" class="subtitle">Travel platform rankings & verified reviews</text>
+  <text x="72" y="620" class="subtitle">travelverdict.vercel.app</text>
+</svg>

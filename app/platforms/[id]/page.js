@@ -11,6 +11,7 @@ import {
 import ProfileReviewFeed from "../../components/profile-review-feed";
 import BackButton from "../../components/back-button";
 import { getPlatformProfile, getPlatformSlugs } from "@/lib/db-ui";
+import { generateProductSchema } from "@/lib/seo-utils";
 
 export const revalidate = 0;
 
@@ -144,25 +145,35 @@ export default async function PlatformProfilePage({ params }) {
   }
 
   const profileUrl = buildAbsoluteUrl(`/platforms/${platform.id}`);
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: platform.name,
-    brand: {
-      "@type": "Brand",
-      name: platform.name,
+  const productSchema = generateProductSchema(
+    { id: platform.id, name: platform.name },
+    {
+      score: platform.scores.composite,
+      count: platform.verifiedReviews.length,
     },
-    description:
-      "Independent travel platform profile with composite and category-level quality scores.",
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: platform.scores.composite,
-      bestRating: 100,
-      worstRating: 0,
-      ratingCount: platform.verifiedReviews.length,
-    },
-    url: profileUrl,
-  };
+    `Independent travel platform profile for ${platform.name} with composite and category-level quality scores.`,
+  );
+
+  const reviewsSchema = (platform.verifiedReviews || [])
+    .slice(0, 10)
+    .map((r) => ({
+      "@context": "https://schema.org",
+      "@type": "Review",
+      author: r.author || "Anonymous",
+      datePublished: r.date || new Date().toISOString(),
+      reviewBody: r.text || r.summary || "",
+      reviewRating: {
+        "@type": "Rating",
+        ratingValue: r.rating ?? Math.round(platform.scores.composite / 20),
+        bestRating: 100,
+        worstRating: 0,
+      },
+      itemReviewed: {
+        "@type": "Product",
+        name: platform.name,
+        url: profileUrl,
+      },
+    }));
 
   const scoreCards = [
     {
@@ -189,7 +200,9 @@ export default async function PlatformProfilePage({ params }) {
     <main className="site-shell page-block">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([productSchema, ...reviewsSchema]),
+        }}
       />
       <section className="page-intro">
         <BackButton fallbackHref="/leaderboard" label="Back" />
